@@ -12,7 +12,7 @@ file(GLOB SOURCES
 
 add_executable(org2-datapack-test ${SOURCES})
 
-target_link_libraries(org2-datapack-test pico_stdlib)
+target_link_libraries(org2-datapack-test pico_stdlib pico_multicore)
 
 pico_enable_stdio_usb(org2-datapack-test 1)
 pico_enable_stdio_uart(org2-datapack-test 0)
