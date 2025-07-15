@@ -12,6 +12,9 @@
 #define HIGH 1
 #define LOW 0
 
+#define EDGE_RISING 0
+#define EDGE_FALLING 1
+
 typedef int Pin;
 typedef std::array<Pin, 13> DataBus;
 
@@ -37,18 +40,23 @@ class Datapack {
         char getDataValue();
         void setDataValue(char value);
         size_t getAddress();
-        Edge getStateChange(size_t index);
+        // Edge getStateChange(size_t index);
         void dumpMemory();
 
         size_t tick = 0;
+        size_t viewPage = 0;
 
     private:
         DataBus _pins;
         DataBus _pinDirections;
         DataBus _state;
         DataBus _prevState;
+        uint32_t _rawState = 0;
+        uint32_t _prevRawState;
+        uint32_t _outputState = 0;
 
         bool _input = false;
+        bool _prevInput = true;
         uint64_t _lastWrite = 0;
 
         std::array<char, 32 * 1024> _data;

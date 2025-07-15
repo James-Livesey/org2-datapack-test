@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
 #include "pico/multicore.h"
+#include "hardware/clocks.h"
 
 #include "datapack.h"
 
@@ -64,7 +65,15 @@ int main() {
             datapackBlocked = false;
         }
 
-        if (key == 'm') {
+        if (key == 'm' || key == 'z' || key == 'x') {
+            if (key == 'z' && datapack->viewPage > 0) {
+                datapack->viewPage--;
+            }
+
+            if (key == 'x') {
+                datapack->viewPage++;
+            }
+
             datapack->dumpMemory();
         }
     }
