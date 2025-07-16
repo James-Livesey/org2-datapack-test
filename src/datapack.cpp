@@ -6,27 +6,41 @@
 Datapack::Datapack(DataBus pins) {
     _pins = pins;
 
-    _data.fill(0);
+    _data.fill(0xFF);
 
-    _data[0] = 1; // ID
+    // _data[0] = 1; // ID
+
+    std::array<char, 48> initialData = {
+        0x7c, 0x04, 0x29, 0x06, 0x0f, 0x0b, 0x58, 0xd3, 0x0c, 0xe8, 0x09, 0x81, 0x4d, 0x41, 0x49, 0x4e,
+        0x20, 0x20, 0x20, 0x20, 0x90, 0x18, 0x90, 0x54, 0x45, 0x53, 0x54, 0x49, 0x4e, 0x47, 0x09, 0x48,
+        0x45, 0x4c, 0x4c, 0x4f, 0x20, 0x57, 0x4f, 0x52, 0x4c, 0x44, 0x20, 0x31, 0x32, 0x33, 0x34, 0xff
+    };
+
+    std::copy(std::begin(initialData), std::end(initialData), std::begin(_data));
 }
 
 void Datapack::step() {
     readState();
 
     if (_state[SS_B] == HIGH) {
-        goto end;
+        return;
+    }
+
+    if (_state[SOE_B] == LOW) {
+        setDataValue(_data[getAddress()]);
+
+        // writeState();
     }
 
     if (_state[SMR] == HIGH) {
         _mainCounter = 0;
         _pageCounter = 0;
 
-        setDataValue(_data[0]);
+        setDataValue(1);
 
-        writeState();
+        // writeState();
 
-        goto end;
+        return;
     }
 
     if (getStateChange(SCLK) == Edge::FALLING) {
@@ -44,21 +58,13 @@ void Datapack::step() {
     if (_state[SOE_B] == HIGH) {
         _data[getAddress()] = getDataValue();
 
-        goto end;
+        return;
     }
-
-    setDataValue(_data[getAddress()]);
-
-    writeState();
-
-    end:
-
-    tick++;
 }
 
 void Datapack::readState() {
     _prevState = _state;
-    _input = gpio_get(_pins[SOE_B]);
+    _input = !!(sio_hw->gpio_in & (1 << _pins[SOE_B]));
 
     if (!_input) {
         for (size_t i = 0; i < 8; i++) {
@@ -68,18 +74,44 @@ void Datapack::readState() {
 
             _pinDirections[i] = PinDirection::OUTPUT;
         }
+
+        _forceWrite = true;
     }
 
-    for (size_t i = _input ? 0 : 8; i < _pins.size(); i++) {
-        if (_pinDirections[i] != PinDirection::INPUT) {
-            gpio_init(_pins[i]);
-            gpio_set_dir(_pins[i], GPIO_IN);
+    _checksum = 0;
+
+    size_t passes = 0;
+
+    while (passes < 4) {
+        size_t currentChecksum = 0;
+
+        for (size_t i = _input ? 0 : 8; i < _pins.size(); i++) {
+            if (_pinDirections[i] != PinDirection::INPUT) {
+                gpio_init(_pins[i]);
+                gpio_set_dir(_pins[i], GPIO_IN);
+            }
+
+            _pinDirections[i] = PinDirection::INPUT;
+
+            // _state[i] = gpio_get(_pins[i]);
+            _state[i] = !!(sio_hw->gpio_in & (1 << _pins[i]));
+            currentChecksum += _state[i];
         }
 
-        _pinDirections[i] = PinDirection::INPUT;
-
-        _state[i] = gpio_get(_pins[i]);
+        if (currentChecksum == _checksum) {
+            passes++;
+        } else {
+            _checksum = currentChecksum;
+            passes = 0;
+        }
     }
+
+    if (_checksum != _prevChecksum) {
+        flips++;
+    }
+
+    tick++;
+    _prevChecksum = _checksum;
 }
 
 void Datapack::writeState() {
@@ -87,9 +119,27 @@ void Datapack::writeState() {
         return;
     }
 
+    uint32_t value = 0;
+
+    // sio_hw->gpio_out = 0;
+    // sio_hw->gpio_oe_set = 0b1111'1111'0000'0000'0000;
+
+    // sleep_us(10);
+
     for (size_t i = 0; i < _pins.size(); i++) {
-        gpio_put(_pins[i], _state[i]);
+        // gpio_put(_pins[i], _state[i]);
+        if (!_state[i]) {
+            continue;
+        }
+
+        value |= (1 << _pins[i]);
     }
+
+    // gpio_put_all(value);
+
+    sio_hw->gpio_clr = ~(value);
+    sio_hw->gpio_set = value;
+    // printf("set %x\n", sio_hw->gpio_out);
 }
 
 char Datapack::getDataValue() {
@@ -103,9 +153,46 @@ char Datapack::getDataValue() {
 }
 
 void Datapack::setDataValue(char value) {
-    for (size_t i = 0; i < 8; i++) {
-        _state[i] = (value & (1 << i)) ? 1 : 0;
+    if (!_forceWrite && value == _lastValue) {
+    //     // writeState();
+        // gpio_put_all(_pinState);
+        return;
     }
+
+    _forceWrite = false;
+    _lastValue = value;
+
+    _pinState = 0;
+
+    for (size_t i = 0; i < 8; i++) {
+        // _state[i] = (value & (1 << i)) ? 1 : 0;
+
+        gpio_put(_pins[i], value & (1 << i));
+
+        // if (!(value & (1 << i))) {
+        //     continue;
+        // }
+
+        // _pinState |= (1 << _pins[i]);
+    }
+
+    // for (size_t i = 0; i < _pins.size(); i++) {
+    //     // gpio_put(_pins[i], _state[i]);
+    //     if (!_state[i]) {
+    //         continue;
+    //     }
+
+    //     value |= (1 << _pins[i]);
+    // }
+
+    // gpio_put_all(value);
+
+    // sio_hw->gpio_clr = ~(_pinState);
+    // sio_hw->gpio_out = _pinState;
+
+    // gpio_put_all(_pinState);
+
+    // writeState();
 }
 
 size_t Datapack::getAddress() {

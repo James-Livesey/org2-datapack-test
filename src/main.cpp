@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
 #include "pico/multicore.h"
+#include "hardware/clocks.h"
 
 #include "datapack.h"
 
@@ -36,6 +37,7 @@ int main() {
 
     uint64_t timeSinceLastReport = 0;
 
+    set_sys_clock_khz(260000, true);
     irq_set_mask_enabled(0x0F, false);
     multicore_launch_core1(stepper);
 
@@ -46,8 +48,16 @@ int main() {
         scanf("%c", &key);
         printf("%c\n", key);
 
+        if (key == 's') {
+            datapack->tick = 0;
+            datapack->flips = 0;
+
+            printf("Reset tick/flips\n");
+        }
+
         if (key == 't') {
-            printf("Tick %d\n", datapack->tick);
+            printf("Tick: %d\n", datapack->tick);
+            printf("Flips: %d\n", datapack->flips);
         }
 
         if (key == 'r') {

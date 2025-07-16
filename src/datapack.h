@@ -41,15 +41,21 @@ class Datapack {
         void dumpMemory();
 
         size_t tick = 0;
+        size_t flips = 0;
 
     private:
         DataBus _pins;
         DataBus _pinDirections;
         DataBus _state;
         DataBus _prevState;
+        size_t _checksum = 0;
+        size_t _prevChecksum = 0;
 
         bool _input = false;
         uint64_t _lastWrite = 0;
+        bool _forceWrite = false;
+        char _lastValue = 0;
+        uint32_t _pinState = 0;
 
         std::array<char, 32 * 1024> _data;
         unsigned char _mainCounter = 0;
