@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 mkdir -p build/picotool-local
 
 pushd build

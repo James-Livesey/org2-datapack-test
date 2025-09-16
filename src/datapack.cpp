@@ -36,7 +36,7 @@ void Datapack::step() {
         _mainCounter = 0;
         _pageCounter = 0;
 
-        setDataValue(1);
+        // setDataValue(1);
 
         // writeState();
 
