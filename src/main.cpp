@@ -5,7 +5,7 @@
 
 #include "datapack.h"
 
-#define TOP_SLOT
+// #define TOP_SLOT
 
 #ifdef TOP_SLOT
     #define PIN_SD 15, 14, 13, 12, 4, 5, 6, 7
@@ -15,12 +15,12 @@
     #define PIN_SS_B 10
     #define PIN_SPGM_B 21
 #else
-    #define PIN_SD 16, 15, 17, 14, 18, 13, 19, 12
-    #define PIN_SMR 11
-    #define PIN_SCLK 20
-    #define PIN_SOE_B 10
-    #define PIN_SS_B 21
-    #define PIN_SPGM_B 22
+    #define PIN_SD 3, 8, 4, 9, 5, 10, 6, 11
+    #define PIN_SMR 12
+    #define PIN_SCLK 7
+    #define PIN_SOE_B 13
+    #define PIN_SS_B 14
+    #define PIN_SPGM_B 15
 #endif
 
 #define PIN_BUS {PIN_SD, PIN_SMR, PIN_SCLK, PIN_SOE_B, PIN_SS_B, PIN_SPGM_B}

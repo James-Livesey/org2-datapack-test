@@ -68,13 +68,13 @@ void Datapack::step() {
         _mainCounter += 2;
     }
 
-    // if (getStateChange(SPGM_B) == Edge::FALLING) {
-    //     _pageCounter++;
+    if (getStateChange(SPGM_B) == Edge::FALLING) {
+        _pageCounter++;
 
-    //     if (_pageCounter >= _data.size() >> 8) {
-    //         _pageCounter = 0;
-    //     }
-    // }
+        if (_pageCounter >= _data.size() >> 8) {
+            _pageCounter = 0;
+        }
+    }
 
     if (_state[SOE_B] == HIGH) {
         _data[getAddress()] = getDataValue();
@@ -148,18 +148,19 @@ void Datapack::writeState() {
     // sleep_us(10);
 
     for (size_t i = 0; i < _pins.size(); i++) {
-        // gpio_put(_pins[i], _state[i]);
-        if (!_state[i]) {
-            continue;
-        }
+        gpio_put(_pins[i], _state[i]);
 
-        value |= (1 << _pins[i]);
+        // if (!_state[i]) {
+        //     continue;
+        // }
+
+        // value |= (1 << _pins[i]);
     }
 
     // gpio_put_all(value);
 
-    sio_hw->gpio_clr = ~(value);
-    sio_hw->gpio_set = value;
+    // sio_hw->gpio_clr = ~(value);
+    // sio_hw->gpio_set = value;
     // printf("set %x\n", sio_hw->gpio_out);
 }
 
